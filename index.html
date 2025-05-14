@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Drama Collection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.5;
+            color: #e5e5e5;
+            background-color: #141414;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        .subtitle {
+            font-size: 1.2rem;
+            color: #aaa;
+        }
+        .feature-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .feature-card {
+            background-color: #222;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .card-header {
+            background-color: #e50914;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        .card-content {
+            padding: 20px;
+            text-align: center;
+        }
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #e50914;
+        }
+        .card-description {
+            margin-bottom: 20px;
+            color: #aaa;
+        }
+        .card-link {
+            display: inline-block;
+            background-color: #e50914;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .card-link:hover {
+            background-color: #b2070f;
+        }
+        footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #444;
+            color: #888;
+        }
+        .footer-links {
+            margin-top: 10px;
+        }
+        .footer-links a {
+            color: #888;
+            margin: 0 10px;
+            text-decoration: none;
+        }
+        .footer-links a:hover {
+            color: #e50914;
+        }
+        .stats-preview {
+            background-color: #222;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        .stats-preview h2 {
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        .stat-item {
+            padding: 15px;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #e50914;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>My Drama Collection</h1>
+        <p class="subtitle">Track, manage, and analyze your watched dramas</p>
+    </header>
+    
+    <div class="stats-preview">
+        <h2>Collection Overview</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="totalDramas">0</div>
+                <div class="stat-label">Total Dramas</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="avgRating">0.0</div>
+                <div class="stat-label">Average Rating</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalGenres">0</div>
+                <div class="stat-label">Unique Genres</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalCountries">0</div>
+                <div class="stat-label">Countries</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="feature-cards">
+        <div class="feature-card">
+            <div class="card-header">
+                Collection
+            </div>
+            <div class="card-content">
+                <div class="card-icon">
+                    <i class="fas fa-th-large"></i>
+                </div>
+                <p class="card-description">
+                    Browse your complete collection of watched dramas with detailed information and ratings.
+                </p>
+                <a href="watched_dramas.html" class="card-link">View Collection</a>
+            </div>
+        </div>
+        
+        <div class="feature-card">
+            <div class="card-header">
+                Add Dramas
+            </div>
+            <div class="card-content">
+                <div class="card-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <p class="card-description">
+                    Search and add new dramas to your collection using the TMDB database.
+                </p>
+                <a href="get_list.html" class="card-link">Add Dramas</a>
+            </div>
+        </div>
+        
+        <div class="feature-card">
+            <div class="card-header">
+                Statistics
+            </div>
+            <div class="card-content">
+                <div class="card-icon">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <p class="card-description">
+                    Analyze your watching habits with detailed statistics and visualizations.
+                </p>
+                <a href="collection_stats.html" class="card-link">View Stats</a>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>My Drama Collection &copy; 2023 | Powered by <a href="https://www.themoviedb.org/" target="_blank" style="color: #e50914;">TMDB</a></p>
+        <div class="footer-links">
+            <a href="watched_dramas.html">Collection</a>
+            <a href="get_list.html">Add Dramas</a>
+            <a href="collection_stats.html">Statistics</a>
+        </div>
+    </footer>
+    
+    <script>
+        // Load drama data from localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const watchedDramas = JSON.parse(localStorage.getItem('watchedDramasData')) || [];
+            
+            // Update stats
+            document.getElementById('totalDramas').textContent = watchedDramas.length;
+            
+            // Calculate average rating
+            if (watchedDramas.length > 0) {
+                const ratings = watchedDramas.filter(d => typeof d.vote_average === 'number').map(d => d.vote_average);
+                const avgRating = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+                document.getElementById('avgRating').textContent = avgRating.toFixed(1);
+            }
+            
+            // Count unique genres
+            const genres = new Set();
+            watchedDramas.forEach(drama => {
+                if (drama.genres && Array.isArray(drama.genres)) {
+                    drama.genres.forEach(genre => {
+                        genres.add(genre.name);
+                    });
+                }
+            });
+            document.getElementById('totalGenres').textContent = genres.size;
+            
+            // Count unique countries
+            const countries = new Set();
+            watchedDramas.forEach(drama => {
+                if (drama.origin_country && Array.isArray(drama.origin_country)) {
+                    drama.origin_country.forEach(country => {
+                        countries.add(country);
+                    });
+                }
+            });
+            document.getElementById('totalCountries').textContent = countries.size;
+        });
+    </script>
+</body>
+</html>

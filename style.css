@@ -1,0 +1,218 @@
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Added 'Inter' as a modern sans-serif option */
+    margin: 0;
+    padding: 0;
+    background-color: #f7f8fc; /* Even lighter, slightly blue-ish background */
+    color: #2c3e50; /* Darker, more saturated text color */
+    line-height: 1.7; /* Slightly increased line-height for readability */
+    -webkit-font-smoothing: antialiased; /* Smoother fonts on WebKit browsers */
+    -moz-osx-font-smoothing: grayscale; /* Smoother fonts on Firefox */
+}
+
+header {
+    background-color: #ffffff;
+    color: #2c3e50;
+    padding: 1.8em 0; /* Slightly more padding */
+    text-align: center;
+    border-bottom: 1px solid #e0e0e0; /* Softer border */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03); /* Very subtle shadow for depth */
+}
+
+header h1 {
+    margin: 0;
+    font-weight: 400; /* Slightly bolder than 300 for better presence */
+    font-size: 2em; /* Slightly larger */
+    letter-spacing: -0.5px; /* Tighter letter spacing for modern feel */
+}
+
+main {
+    padding: 30px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Increased min card size slightly */
+    gap: 30px; /* Increased gap */
+    max-width: 1400px; /* Added max-width for very large screens */
+    margin: 0 auto; /* Center main content area */
+}
+
+.drama-card {
+    background-color: #fff;
+    border-radius: 16px; /* Even more rounded corners */
+    box-shadow: 0 6px 18px rgba(44, 62, 80, 0.08); /* More refined shadow */
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transition */
+}
+
+.drama-card:hover {
+    transform: translateY(-8px); /* More pronounced hover effect */
+    box-shadow: 0 10px 25px rgba(44, 62, 80, 0.15); /* Stronger shadow on hover */
+}
+
+.drama-card img.backdrop {
+    width: 100%;
+    height: 180px; /* Adjusted height */
+    object-fit: cover;
+    display: block;
+    border-bottom: 1px solid #f0f0f0; /* Subtle separator */
+}
+
+.drama-card .info {
+    padding: 20px 25px; /* Adjusted padding */
+}
+
+.drama-card h2 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 1.4em;
+    font-weight: 600;
+    color: #34495e; /* Slightly different shade for heading */
+    letter-spacing: -0.2px;
+}
+
+.drama-card p {
+    margin: 8px 0;
+    font-size: 0.9em; /* Slightly larger paragraph text */
+    line-height: 1.6;
+    color: #555e68; /* Softer paragraph text color */
+}
+
+.drama-card .poster { /* No longer floating, will be in modal */
+    display: none; /* Hide poster from card view, will show in modal */
+}
+
+.drama-card strong {
+    font-weight: 600;
+    color: #333; /* Ensure strong text is dark */
+}
+
+footer {
+    text-align: center;
+    padding: 25px;
+    background-color: #f0f0f0; /* Lighter footer */
+    color: #555;
+    font-size: 0.9em;
+    border-top: 1px solid #ddd;
+}
+
+footer a {
+    color: #007bff; /* Standard link blue */
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(30,30,40,0.75); /* Darker, slightly desaturated backdrop */
+    backdrop-filter: blur(5px); /* Frosted glass effect for modern UIs (check browser support) */
+    -webkit-backdrop-filter: blur(5px); /* For Safari */
+    padding-top: 60px; /* Location of the box */
+}
+
+.modal-content {
+    background-color: #fdfdfd; /* Slightly off-white for modal */
+    margin: 5% auto;
+    padding: 35px 40px; /* Increased padding */
+    border: none; /* Remove border, rely on shadow */
+    width: 90%;
+    max-width: 650px; /* Slightly smaller max-width for better focus */
+    border-radius: 12px; /* Consistent rounding */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    position: relative;
+    animation: fadeInModal 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother animation */
+}
+
+@keyframes fadeInModal {
+    from {opacity: 0; transform: translateY(-25px) scale(0.98);} /* Added scale for a subtle pop */
+    to {opacity: 1; transform: translateY(0) scale(1);}
+}
+
+.close-button {
+    color: #888; /* Lighter close button */
+    float: right;
+    font-size: 32px; /* Larger close button */
+    font-weight: normal; /* Lighter weight */
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    transition: color 0.2s ease; /* Smooth color transition */
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #e74c3c; /* Red color on hover for delete/close action */
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#modal-body-content {
+    max-height: 75vh; /* Slightly more max height */
+    overflow-y: auto;
+    padding-right: 10px; /* Add some padding if scrollbar appears */
+}
+
+#modal-body-content img.modal-poster {
+    max-width: 180px; /* Larger poster in modal */
+    height: auto;
+    float: right;
+    margin-left: 20px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Softer shadow for poster */
+}
+
+#modal-body-content h2 {
+    margin-top: 5px; /* Adjust if poster is present */
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 1.8em; /* Larger modal title */
+    letter-spacing: -0.3px;
+}
+
+#modal-body-content p {
+    margin: 12px 0;
+    font-size: 1em; /* Standardize modal paragraph text size */
+    line-height: 1.6;
+    color: #555;
+}
+#modal-body-content strong {
+    color: #2c3e50; /* Consistent strong color */
+    font-weight: 600;
+}
+
+#modal-body-content a {
+    color: #007bff;
+}
+#modal-body-content a:hover {
+    text-decoration: underline;
+}
+
+/* Custom Scrollbar for modal (optional, WebKit browsers) */
+#modal-body-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+#modal-body-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#modal-body-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+#modal-body-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

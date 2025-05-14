@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TMDB Show Matcher</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Add the navigation script -->
+  <script src="nav.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: var(--color-text-secondary);
+      max-width: 900px;
+      margin: 0 auto;
+      padding: var(--space-xl);
+      background-color: var(--color-background);
+    }
+    h1 {
+      text-align: center;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-xl);
+    }
+    .container {
+      margin-bottom: 20px;
+    }
+
+    /* Consistent container styling */
+    .container, .show-current, .skipped-shows-section, 
+    .current-settings-section, .export-data, .search-again, .selected-so-far {
+      background-color: var(--color-card-bg);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Section headers */
+    .section-header {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: var(--space-md);
+      color: var(--color-text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+      margin-bottom: 10px;
+    }
+    /* Improved button styling */
+    button, .nav-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0.7rem 1.4rem;
+      background-color: var(--color-accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      min-width: 140px;
+      height: 45px;
+    }
+    
+    button:hover, .nav-button:hover {
+      background-color: var(--color-accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    button.secondary {
+      background-color: #333;
+    }
+    
+    button.secondary:hover {
+      background-color: #444;
+    }
+    
+    button.skip {
+      background-color: #555;
+      color: var(--color-text-secondary);
+    }
+    
+    button.skip:hover {
+      background-color: #666;
+    }
+    
+    #transferToWatchedButton {
+      width: 100%;
+      padding: var(--space-md);
+      background-color: var(--color-accent);
+      margin-top: var(--space-md);
+    }
+    
+    #processButton, #saveSettingsButton, #downloadButton {
+      background-color: var(--color-accent);
+    }
+    .api-notes {
+      background-color: rgba(245, 158, 11, 0.1);
+      border-left: 4px solid var(--color-star);
+      color: var(--color-text-secondary);
+      padding: 16px;
+      margin-bottom: 16px;
+      border-radius: 4px;
+    }
+    .api-notes p {
+      margin-bottom: 8px;
+    }
+    .api-notes ol {
+      margin-left: 20px;
+    }
+    .input-section, .results-section, .processing-section, .complete-section, .settings-section {
+      display: none;
+    }
+    .show-current {
+      background-color: var(--color-card-bg);
+      padding: 16px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+    .show-current h2 {
+      font-size: 20px;
+      color: var(--color-text-primary);
+    }
+    .show-current span {
+      color: var(--color-accent);
+    }
+    .progress {
+      margin-bottom: var(--space-lg);
+    }
+    
+    .progress-info {
+      display: flex;
+      align-items: center;
+      margin-bottom: var(--space-sm);
+    }
+    
+    .progress-bar-container {
+      height: 8px;
+      background-color: #333;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: var(--space-sm);
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background-color: var(--color-accent);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 32px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top-color: #2563eb;
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 10px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    /* Add notification styles */
+    @keyframes slideIn {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateY(0); opacity: 1; }
+      to { transform: translateY(100px); opacity: 0; }
+    }
+    .show-card {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      margin-bottom: var(--space-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background-color: var(--color-card-bg);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .show-card:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .show-card.selected {
+      border-color: var(--color-accent);
+      background-color: rgba(229, 9, 20, 0.1);
+    }
+    
+    .show-card.selected::before {
+      content: "✓";
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: var(--color-accent);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .show-card-inner {
+      display: flex;
+    }
+    .show-card-image {
+      flex-shrink: 0;
+      width: 64px;
+      height: 96px;
+      background-color: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .show-card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .show-card-content {
+      margin-left: 16px;
+      flex: 1;
+    }
+    .show-card h3 {
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: var(--color-text-primary);
+    }
+    .show-card .meta {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      margin-bottom: 4px;
+    }
+    .show-card .overview {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .no-results {
+      text-align: center;
+      padding: 32px;
+      background-color: var(--color-card-bg);
+      border-radius: var(--radius-md);
+      color: var(--color-text-secondary);
+    }
+    .selected-so-far {
+      background-color: var(--color-card-bg);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      margin-top: var(--space-lg);
+      color: var(--color-text-secondary);
+    }
+    .selected-so-far h3 {
+      font-weight: 500;
+      margin-bottom: var(--space-sm);
+      color: var(--color-text-primary);
+    }
+    .selected-so-far ul {
+      font-size: 14px;
+      margin-left: 20px;
+    }
+    .selected-shows {
+      margin-bottom: 24px;
+    }
+    .selected-shows li {
+      padding: 16px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .selected-shows .id {
+      display: inline-block;
+      width: 40px;
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+    .selected-shows .title {
+      font-weight: 500;
+      color: var(--color-text-primary);
+    }
+    .selected-shows .selected {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+    }
+    .export-data {
+      margin-top: 24px;
+      padding: 16px;
+      background-color: var(--color-card-bg);
+      border-radius: 4px;
+    }
+    .export-data h3 {
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: var(--color-text-primary);
+    }
+    .export-data pre {
+      background-color: #1f2937;
+      color: #34d399;
+      padding: 16px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 14px;
+    }
+    .buttons {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+    
+    .buttons .button-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+    
+    .buttons button {
+      flex: 1;
+    }
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 16px;
+      margin-bottom: 16px;
+    }
+    .search-again {
+      margin-top: 16px;
+      padding: 16px;
+      background-color: var(--color-card-bg);
+      border-radius: 4px;
+    }
+    .search-again h3 {
+      color: var(--color-text-primary);
+      margin-bottom: 8px;
+    }
+    .search-again p {
+      color: var(--color-text-secondary);
+      margin-bottom: 8px;
+    }
+    .search-again input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      background-color: #333;
+      color: #e5e5e5;
+    }
+    .checkbox-group {
+      margin-bottom: 16px;
+    }
+    .checkbox-group h3 {
+      color: var(--color-text-primary);
+      margin-bottom: 8px;
+    }
+    .checkbox-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--color-text-secondary);
+    }
+    .checkbox-group input[type="checkbox"] {
+      margin-right: 8px;
+    }
+    .radio-group {
+      margin-bottom: 16px;
+    }
+    .radio-group h3 {
+      color: var(--color-text-primary);
+      margin-bottom: 8px;
+    }
+    .radio-group label {
+      margin-right: 16px;
+      color: var(--color-text-secondary);
+    }
+    .radio-group input[type="radio"] {
+      margin-right: 4px;
+    }
+    .skipped-shows-section, .current-settings-section {
+      margin-top: var(--space-lg);
+      padding: var(--space-md);
+      background-color: var(--color-card-bg);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .skipped-shows-section h2, .current-settings-section h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-md);
+      display: flex;
+      align-items: center;
+    }
+    .skipped-shows-section h2:before {
+      content: "⚠️";
+      margin-right: 8px;
+    }
+    .current-settings-section h2:before {
+      content: "⚙️";
+      margin-right: 8px;
+    }
+    .skipped-shows {
+      margin-bottom: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      background-color: var(--color-card-bg);
+    }
+    .skipped-shows li {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+    }
+    .skipped-shows li:last-child {
+      border-bottom: none;
+    }
+    .skipped-shows li:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    .skipped-shows .id {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background-color: #333;
+      color: #e5e5e5;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 12px;
+    }
+    .skipped-shows .title {
+      font-weight: 500;
+      flex: 1;
+      color: var(--color-text-primary);
+    }
+    .skipped-shows .retry-button {
+      background-color: var(--color-accent);
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .skipped-shows .retry-button:hover {
+      background-color: var(--color-accent-hover);
+    }
+    .current-settings-content {
+      background-color: var(--color-card-bg);
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .current-settings-content p {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      color: var(--color-text-secondary);
+    }
+    .current-settings-content p strong {
+      min-width: 120px;
+      display: inline-block;
+      color: var(--color-text-primary);
+    }
+    .current-settings-content .setting-value {
+      background-color: #333;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      color: #e5e5e5;
+    }
+    #changeSettingsButton {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #changeSettingsButton:before {
+      content: "✏️";
+      font-size: 14px;
+    }
+    .no-skipped {
+      text-align: center;
+      padding: var(--space-md);
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+    .settings-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #dbeafe;
+      color: #1e40af;
+      border-radius: 9999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+  </style>
+  <!-- Removed main-nav styles since they should be in nav.js -->
+</head>
+<body>
+  <h1>TMDB Show Matcher</h1>
+  
+  <!-- Navigation will be injected here by nav.js -->
+  
+  <div class="api-notes">
+    <p><strong>TMDB API Implementation Notes:</strong></p>
+    <p style="font-size: 14px;">
+      To use this application, you'll need:
+    </p>
+    <ol style="font-size: 14px; margin-left: 20px;">
+      <li>A TMDB API key from <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org</a></li>
+      <li>Enter your API key in the field below before processing your list</li>
+    </ol>
+  </div>
+  
+  <div id="inputSection" class="input-section" style="display: block;">
+    <div class="container">
+      <label for="apiKey"><strong>Your TMDB API Key:</strong></label>
+      <input type="text" id="apiKey" placeholder="Enter your TMDB API key" style="display: block; width: 100%; padding: 8px; margin: 8px 0 16px; border: 1px solid #ccc; border-radius: 4px;">
+      
+      <label for="showsList"><strong>Paste your list of shows (one per line):</strong></label>
+      <textarea id="showsList" placeholder="Friends&#10;Breaking Bad&#10;The Office&#10;Game of Thrones&#10;..."></textarea>
+      
+      <button id="settingsButton" class="secondary">
+        <i class="fas fa-cog"></i> Settings
+      </button>
+      <button id="processButton">
+        <i class="fas fa-play"></i> Process List
+      </button>
+    </div>
+  </div>
+  
+  <div id="settingsSection" class="settings-section">
+    <h2 style="margin-bottom: 16px;">Output Settings</h2>
+    
+    <div class="checkbox-group">
+      <h3>Select information to include in output:</h3>
+      <label><input type="checkbox" name="outputFields" value="title" checked> Original Title</label>
+      <label><input type="checkbox" name="outputFields" value="tmdb_id" checked> TMDB ID</label>
+      <label><input type="checkbox" name="outputFields" value="tmdb_name" checked> TMDB Name</label>
+      <label><input type="checkbox" name="outputFields" value="year" checked> Year</label>
+      <label><input type="checkbox" name="outputFields" value="overview"> Overview</label>
+      <label><input type="checkbox" name="outputFields" value="poster_path"> Poster Path</label>
+      <label><input type="checkbox" name="outputFields" value="vote_average"> Rating</label>
+    </div>
+    
+    <div class="radio-group">
+      <h3>Export Format:</h3>
+      <label><input type="radio" name="exportFormat" value="json" checked> JSON</label>
+      <label><input type="radio" name="exportFormat" value="csv"> CSV</label>
+    </div>
+    
+    <div class="buttons">
+      <button id="saveSettingsButton">
+        <i class="fas fa-save"></i> Save
+      </button>
+      <button id="cancelSettingsButton" class="secondary">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+    </div>
+  </div>
+  
+  <div id="processingSection" class="processing-section">
+    <div class="progress">
+  <div class="progress-info">
+    <span><strong>Processing: </strong></span>
+    <span id="currentProgress">1 of 1</span>
+  </div>
+  <div class="progress-bar-container">
+    <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+  </div>
+  <button id="skipButton" class="skip">Skip This Show</button>
+</div>
+    
+    <div class="show-current">
+      <h2>Current Show: <span id="currentShow"></span></h2>
+    </div>
+    
+    <div id="loadingIndicator" class="loading">
+      <div class="spinner"></div>
+      <p id="searchStatus">Searching...</p>
+    </div>
+    
+    <div id="resultsContainer"></div>
+    
+    <div id="paginationContainer" class="pagination" style="display: none;">
+      <button id="prevPageButton" class="secondary" disabled>
+        <i class="fas fa-chevron-left"></i> Previous
+      </button>
+      <span id="pageInfo">Page 1</span>
+      <button id="nextPageButton" class="secondary" disabled>
+        <i class="fas fa-chevron-right"></i> Next
+      </button>
+    </div>
+    
+    <div id="searchAgainContainer" class="search-again" style="display: none;">
+      <h3>Can't find what you're looking for?</h3>
+      <p>Try searching with a different name:</p>
+      <input type="text" id="alternativeSearch" placeholder="Enter alternative show name">
+      <button id="searchAgainButton">
+        <i class="fas fa-search"></i> Search
+      </button>
+    </div>
+    
+    <div class="selected-so-far">
+      <h3>Selected so far: <span id="selectedCount">0</span> of <span id="totalCount">0</span></h3>
+      <div id="selectedPreview" style="font-size: 14px;">
+        <p style="font-style: italic;">No shows selected yet</p>
+      </div>
+    </div>
+  </div>
+  
+  <div id="completeSection" class="complete-section">
+    <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">Selected Shows</h2>
+    
+    <ul id="selectedShowsList" class="selected-shows"></ul>
+    
+    <div class="export-data">
+      <h3>Export Data:</h3>
+      <pre id="exportJson"></pre>
+    </div>
+    
+    <div class="buttons">
+      <div class="button-row">
+        <button id="downloadButton">
+          <i class="fas fa-download"></i> Download
+        </button>
+        <button id="startOverButton" class="secondary">
+          <i class="fas fa-redo"></i> Start Over
+        </button>
+      </div>
+      <button id="transferToWatchedButton">
+        <i class="fas fa-exchange-alt"></i> Transfer to Watched
+      </button>
+    </div>
+  </div>
+  
+  <script>
+    // Application state
+    const state = {
+      apiKey: '',
+      inputList: '',
+      showsList: [],
+      currentIndex: 0,
+      searchResults: [],
+      allSearchResults: [], // Store all results for pagination
+      currentPage: 1,
+      resultsPerPage: 10,
+      selectedShows: {},
+      skippedShows: [], // Add array to track skipped shows
+      isProcessing: false,
+      settings: {
+        outputFields: ['title', 'tmdb_id', 'tmdb_name', 'year'],
+        exportFormat: 'json'
+      }
+    };
+    
+    // DOM Elements
+    const elements = {
+      inputSection: document.getElementById('inputSection'),
+      settingsSection: document.getElementById('settingsSection'),
+      processingSection: document.getElementById('processingSection'),
+      completeSection: document.getElementById('completeSection'),
+      apiKeyInput: document.getElementById('apiKey'),
+      showsListInput: document.getElementById('showsList'),
+      settingsButton: document.getElementById('settingsButton'),
+      processButton: document.getElementById('processButton'),
+      saveSettingsButton: document.getElementById('saveSettingsButton'),
+      cancelSettingsButton: document.getElementById('cancelSettingsButton'),
+      skipButton: document.getElementById('skipButton'),
+      startOverButton: document.getElementById('startOverButton'),
+      downloadButton: document.getElementById('downloadButton'),
+      currentProgress: document.getElementById('currentProgress'),
+      currentShow: document.getElementById('currentShow'),
+      loadingIndicator: document.getElementById('loadingIndicator'),
+      searchStatus: document.getElementById('searchStatus'),
+      resultsContainer: document.getElementById('resultsContainer'),
+      paginationContainer: document.getElementById('paginationContainer'),
+      prevPageButton: document.getElementById('prevPageButton'),
+      nextPageButton: document.getElementById('nextPageButton'),
+      pageInfo: document.getElementById('pageInfo'),
+      searchAgainContainer: document.getElementById('searchAgainContainer'),
+      alternativeSearch: document.getElementById('alternativeSearch'),
+      searchAgainButton: document.getElementById('searchAgainButton'),
+      selectedCount: document.getElementById('selectedCount'),
+      totalCount: document.getElementById('totalCount'),
+      selectedPreview: document.getElementById('selectedPreview'),
+      selectedShowsList: document.getElementById('selectedShowsList'),
+      exportJson: document.getElementById('exportJson'),
+      outputFieldsCheckboxes: document.getElementsByName('outputFields'),
+      exportFormatRadios: document.getElementsByName('exportFormat')
+    };
+    
+    // Initialize event listeners
+    function initializeApp() {
+      elements.processButton.addEventListener('click', processInputList);
+      elements.skipButton.addEventListener('click', skipShow);
+      elements.startOverButton.addEventListener('click', resetApp);
+      elements.settingsButton.addEventListener('click', showSettings);
+      elements.saveSettingsButton.addEventListener('click', saveSettings);
+      elements.cancelSettingsButton.addEventListener('click', hideSettings);
+      elements.prevPageButton.addEventListener('click', goToPrevPage);
+      elements.nextPageButton.addEventListener('click', goToNextPage);
+      elements.searchAgainButton.addEventListener('click', searchWithAlternativeName);
+      elements.downloadButton.addEventListener('click', downloadData);
+      elements.updateSettingsButton.addEventListener('click', updateFinalSettings);
+      
+      // Load settings from localStorage if available
+      loadSettings();
+    }
+    
+    // Load settings from localStorage
+    function loadSettings() {
+      const savedSettings = localStorage.getItem('tmdbMatcherSettings');
+      if (savedSettings) {
+        state.settings = JSON.parse(savedSettings);
+        
+        // Update UI to match saved settings
+        elements.outputFieldsCheckboxes.forEach(checkbox => {
+          checkbox.checked = state.settings.outputFields.includes(checkbox.value);
+        });
+        
+        elements.exportFormatRadios.forEach(radio => {
+          radio.checked = (radio.value === state.settings.exportFormat);
+        });
+      }
+    }
+    
+    // Show settings panel
+    function showSettings() {
+      elements.inputSection.style.display = 'none';
+      elements.settingsSection.style.display = 'block';
+    }
+    
+    // Hide settings panel
+    function hideSettings() {
+      elements.settingsSection.style.display = 'none';
+      elements.inputSection.style.display = 'block';
+    }
+    
+    // Save settings
+    function saveSettings() {
+      // Get selected output fields
+      const outputFields = [];
+      elements.outputFieldsCheckboxes.forEach(checkbox => {
+        if (checkbox.checked) {
+          outputFields.push(checkbox.value);
+        }
+      });
+      
+      // Get selected export format
+      let exportFormat = 'json';
+      elements.exportFormatRadios.forEach(radio => {
+        if (radio.checked) {
+          exportFormat = radio.value;
+        }
+      });
+      
+      // Update state
+      state.settings.outputFields = outputFields;
+      state.settings.exportFormat = exportFormat;
+      
+      // Save to localStorage
+      localStorage.setItem('tmdbMatcherSettings', JSON.stringify(state.settings));
+      
+      // Return to appropriate screen
+      if (state.returnToResults) {
+        state.returnToResults = false;
+        elements.settingsSection.style.display = 'none';
+        elements.completeSection.style.display = 'block';
+        
+        // Update displayed settings and export data
+        renderCurrentSettings();
+        generateExportData();
+      } else {
+        hideSettings();
+      }
+    }
+    
+    // Process input list when the user submits
+    function processInputList() {
+      state.apiKey = elements.apiKeyInput.value.trim();
+      if (!state.apiKey) {
+        alert('Please enter your TMDB API key');
+        return;
+      }
+      
+      state.inputList = elements.showsListInput.value;
+      if (!state.inputList.trim()) {
+        alert('Please enter at least one show');
+        return;
+      }
+      
+      state.showsList = state.inputList
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+      
+      state.currentIndex = 0;
+      state.selectedShows = {};
+      
+      elements.inputSection.style.display = 'none';
+      elements.settingsSection.style.display = 'none';
+      elements.processingSection.style.display = 'block';
+      elements.completeSection.style.display = 'none';
+      
+      elements.totalCount.textContent = state.showsList.length;
+      initializeProgressBar();
+      updateProgress();
+      
+      if (state.showsList.length > 0) {
+        searchShow(state.showsList[0]);
+      }
+    }
+    
+    // Update progress indicators
+    function updateProgress() {
+      elements.currentProgress.textContent = `${state.currentIndex + 1} of ${state.showsList.length}`;
+      elements.currentShow.textContent = state.showsList[state.currentIndex];
+      
+      const selectedCount = Object.keys(state.selectedShows).length;
+      elements.selectedCount.textContent = selectedCount;
+      
+      // Update progress bar
+      const progress = (state.currentIndex + 1) / state.showsList.length * 100;
+      const progressBar = document.getElementById('progressBar');
+      if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+      }
+      
+      // Update selected preview
+      let previewHTML = '';
+      if (selectedCount > 0) {
+        previewHTML = '<ul style="list-style: disc; margin-left: 20px;">';
+        
+        // Get last 3 selections or fewer if there are less than 3
+        const keys = Object.keys(state.selectedShows);
+        const recentSelections = keys.slice(Math.max(0, keys.length - 3));
+        
+        for (const title of recentSelections) {
+          const show = state.selectedShows[title];
+          previewHTML += `<li>${title} → ${show.name} (ID: ${show.id})</li>`;
+        }
+        
+        if (keys.length > 3) {
+          previewHTML += `<li style="font-style: italic;">...and ${keys.length - 3} more</li>`;
+        }
+        
+        previewHTML += '</ul>';
+      } else {
+        previewHTML = '<p style="font-style: italic;">No shows selected yet</p>';
+      }
+      
+      elements.selectedPreview.innerHTML = previewHTML;
+    }
+
+    // Initialize progress bar
+    function initializeProgressBar() {
+      const progressBar = document.getElementById('progressBar');
+      if (progressBar) {
+        progressBar.style.width = '0%';
+      }
+    }
+    
+    // Search for a show using TMDB API
+    function searchShow(query) {
+      state.isProcessing = true;
+      elements.searchStatus.textContent = `Searching for "${query}"...`;
+      elements.loadingIndicator.style.display = 'block';
+      elements.resultsContainer.innerHTML = '';
+      elements.paginationContainer.style.display = 'none';
+      elements.searchAgainContainer.style.display = 'none';
+      
+      // Reset pagination
+      state.currentPage = 1;
+      
+      // Actual TMDB API call
+      fetch(`https://api.themoviedb.org/3/search/tv?api_key=${state.apiKey}&query=${encodeURIComponent(query)}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          state.allSearchResults = data.results;
+          state.searchResults = getPageResults();
+          renderSearchResults();
+          state.isProcessing = false;
+          elements.loadingIndicator.style.display = 'none';
+          
+          // Show search again option
+          elements.searchAgainContainer.style.display = 'block';
+          elements.alternativeSearch.value = query;
+        })
+        .catch(error => {
+          console.error('Error fetching results:', error);
+          elements.loadingIndicator.style.display = 'none';
+          elements.resultsContainer.innerHTML = `
+            <div class="no-results">
+              <p>Error searching for "${query}": ${error.message}</p>
+              <button class="skip" onclick="skipShow()">Skip and continue</button>
+            </div>
+          `;
+          
+          // Show search again option
+          elements.searchAgainContainer.style.display = 'block';
+          elements.alternativeSearch.value = query;
+        });
+    }
+    
+    // Get results for current page
+    function getPageResults() {
+      const startIndex = (state.currentPage - 1) * state.resultsPerPage;
+      return state.allSearchResults.slice(startIndex, startIndex + state.resultsPerPage);
+    }
+    
+    // Go to previous page
+    function goToPrevPage() {
+      if (state.currentPage > 1) {
+        state.currentPage--;
+        state.searchResults = getPageResults();
+        renderSearchResults();
+      }
+    }
+    
+    // Go to next page
+    function goToNextPage() {
+      const maxPage = Math.ceil(state.allSearchResults.length / state.resultsPerPage);
+      if (state.currentPage < maxPage) {
+        state.currentPage++;
+        state.searchResults = getPageResults();
+        renderSearchResults();
+      }
+    }
+    
+    // Render search results
+    function renderSearchResults() {
+      if (state.searchResults.length === 0) {
+        elements.resultsContainer.innerHTML = `
+          <div class="no-results">
+            <p>No results found for "${state.showsList[state.currentIndex]}"</p>
+          </div>
+        `;
+        elements.paginationContainer.style.display = 'none';
+        return;
+      }
+      
+      let resultsHTML = '';
+      
+      for (const show of state.searchResults) {
+        const firstAirDate = show.first_air_date ? new Date(show.first_air_date).getFullYear() : 'Unknown';
+        const posterUrl = show.poster_path 
+          ? `https://image.tmdb.org/t/p/w92${show.poster_path}`
+          : '';
+        
+        resultsHTML += `
+          <div class="show-card" data-id="${show.id}" onclick="selectShow(${show.id})">
+            <div class="show-card-inner">
+              <div class="show-card-image">
+                ${posterUrl ? `<img src="${posterUrl}" alt="${show.name}">` : ''}
+              </div>
+              <div class="show-card-content">
+                <h3>${show.name}</h3>
+                <div class="meta">
+                  <span>${firstAirDate}</span>
+                  ${show.vote_average ? ` • Rating: ${show.vote_average}/10` : ''}
+                </div>
+                <div class="overview">${show.overview || 'No overview available'}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      elements.resultsContainer.innerHTML = resultsHTML;
+      
+      // Update pagination
+      const totalPages = Math.ceil(state.allSearchResults.length / state.resultsPerPage);
+      elements.pageInfo.textContent = `Page ${state.currentPage} of ${totalPages}`;
+      elements.prevPageButton.disabled = state.currentPage <= 1;
+      elements.nextPageButton.disabled = state.currentPage >= totalPages;
+      
+      if (totalPages > 1) {
+        elements.paginationContainer.style.display = 'flex';
+      } else {
+        elements.paginationContainer.style.display = 'none';
+      }
+    }
+    
+    // Select a show from search results
+    function selectShow(id) {
+      const selectedShow = state.allSearchResults.find(show => show.id === id);
+      if (!selectedShow) return;
+      
+      const currentTitle = state.showsList[state.currentIndex];
+      state.selectedShows[currentTitle] = {
+        title: currentTitle,
+        id: selectedShow.id,
+        name: selectedShow.name,
+        year: selectedShow.first_air_date ? new Date(selectedShow.first_air_date).getFullYear() : null,
+        overview: selectedShow.overview,
+        poster_path: selectedShow.poster_path,
+        vote_average: selectedShow.vote_average
+      };
+      
+      moveToNextShow();
+    }
+    
+    // Skip current show
+    function skipShow() {
+      // Add current show to skipped list
+      state.skippedShows.push(state.showsList[state.currentIndex]);
+      moveToNextShow();
+    }
+    
+    // Move to next show in the list
+    function moveToNextShow() {
+      state.currentIndex++;
+      
+      if (state.currentIndex < state.showsList.length) {
+        updateProgress();
+        searchShow(state.showsList[state.currentIndex]);
+      } else {
+        completeProcessing();
+      }
+    }
+    
+    // Search with alternative name
+    function searchWithAlternativeName() {
+      const alternativeName = elements.alternativeSearch.value.trim();
+      if (alternativeName) {
+        searchShow(alternativeName);
+      }
+    }
+    
+    // Complete processing and show results
+    function completeProcessing() {
+      elements.processingSection.style.display = 'none';
+      elements.completeSection.style.display = 'block';
+      
+      renderSelectedShows();
+      renderSkippedShows(); // Add function to render skipped shows
+      renderCurrentSettings(); // Add function to render current settings
+      generateExportData();
+      
+      // Show transfer button if we have selected shows
+      if (Object.keys(state.selectedShows).length > 0) {
+        showTransferButton();
+      }
+    }
+    
+    // Render selected shows list
+    function renderSelectedShows() {
+      let listHTML = '';
+      
+      const titles = Object.keys(state.selectedShows);
+      for (let i = 0; i < titles.length; i++) {
+        const title = titles[i];
+        const show = state.selectedShows[title];
+        
+        listHTML += `
+          <li>
+            <span class="id">${i + 1}</span>
+            <span class="title">${title}</span>
+            <span class="selected">→ ${show.name} (${show.year || 'Unknown'})</span>
+          </li>
+        `;
+      }
+      
+      if (listHTML) {
+        elements.selectedShowsList.innerHTML = listHTML;
+      } else {
+        elements.selectedShowsList.innerHTML = '<li>No shows were selected</li>';
+      }
+    }
+    
+    // Render skipped shows list
+    function renderSkippedShows() {
+      // Create skipped shows section if it doesn't exist
+      if (!document.getElementById('skippedShowsSection')) {
+        const skippedSection = document.createElement('div');
+        skippedSection.id = 'skippedShowsSection';
+        skippedSection.className = 'skipped-shows-section';
+        skippedSection.innerHTML = `
+          <h2 style="font-size: 20px; font-weight: bold; margin: 24px 0 16px;">Skipped Shows</h2>
+          <ul id="skippedShowsList" class="skipped-shows"></ul>
+        `;
+        
+        // Insert before export data section
+        const exportSection = document.querySelector('.export-data');
+        exportSection.parentNode.insertBefore(skippedSection, exportSection);
+      }
+      
+      const skippedShowsList = document.getElementById('skippedShowsList');
+      
+      if (state.skippedShows.length === 0) {
+        skippedShowsList.innerHTML = '<li style="padding: 16px;">No shows were skipped</li>';
+        return;
+      }
+      
+      let listHTML = '';
+      for (let i = 0; i < state.skippedShows.length; i++) {
+        const title = state.skippedShows[i];
+        listHTML += `
+          <li>
+            <span class="id">${i + 1}</span>
+            <span class="title">${title}</span>
+          </li>
+        `;
+      }
+      
+      skippedShowsList.innerHTML = listHTML;
+    }
+    
+    // Render current settings
+    function renderCurrentSettings() {
+      // Create settings section if it doesn't exist
+      if (!document.getElementById('currentSettingsSection')) {
+        const settingsSection = document.createElement('div');
+        settingsSection.id = 'currentSettingsSection';
+        settingsSection.className = 'current-settings-section';
+        settingsSection.innerHTML = `
+          <h2>Current Settings <span class="settings-badge">${state.settings.outputFields.length} fields</span></h2>
+          <div id="currentSettingsContent" class="current-settings-content"></div>
+          <button id="changeSettingsButton" class="secondary">Change Settings</button>
+        `;
+        
+        // Insert before export data section
+        const exportSection = document.querySelector('.export-data');
+        exportSection.parentNode.insertBefore(settingsSection, exportSection);
+        
+        // Add event listener for change settings button
+        document.getElementById('changeSettingsButton').addEventListener('click', showSettingsFromResults);
+      }
+      
+      const settingsContent = document.getElementById('currentSettingsContent');
+      
+      // Format output fields
+      const fieldLabels = {
+        title: 'Original Title',
+        tmdb_id: 'TMDB ID',
+        tmdb_name: 'TMDB Name',
+        year: 'Year',
+        overview: 'Overview',
+        poster_path: 'Poster Path',
+        vote_average: 'Rating'
+      };
+      
+      const outputFieldsText = state.settings.outputFields.map(field => 
+        `<span class="setting-value">${fieldLabels[field] || field}</span>`
+      ).join(', ');
+      
+      settingsContent.innerHTML = `
+        <p><strong>Output Fields:</strong> ${outputFieldsText}</p>
+        <p><strong>Export Format:</strong> <span class="setting-value">${state.settings.exportFormat.toUpperCase()}</span></p>
+      `;
+      
+      // Update settings badge
+      const settingsBadge = document.querySelector('.settings-badge');
+      if (settingsBadge) {
+        settingsBadge.textContent = `${state.settings.outputFields.length} fields`;
+      }
+    }
+    
+    // Show settings from results page
+    function showSettingsFromResults() {
+      // Save current view state to return after settings
+      state.returnToResults = true;
+      
+      // Show settings section
+      elements.completeSection.style.display = 'none';
+      elements.settingsSection.style.display = 'block';
+    }
+    
+    // Generate export data based on settings
+    function generateExportData() {
+      const titles = Object.keys(state.selectedShows);
+      
+      if (state.settings.exportFormat === 'json') {
+        // JSON export
+        const exportData = {};
+        
+        for (const title of titles) {
+          const show = state.selectedShows[title];
+          const exportShow = {};
+          
+          // Only include selected fields
+          for (const field of state.settings.outputFields) {
+            if (field === 'title') exportShow.title = title;
+            else if (field === 'tmdb_id') exportShow.tmdb_id = show.id;
+            else if (field === 'tmdb_name') exportShow.tmdb_name = show.name;
+            else if (field === 'year') exportShow.year = show.year;
+            else if (field === 'overview') exportShow.overview = show.overview;
+            else if (field === 'poster_path') exportShow.poster_path = show.poster_path;
+            else if (field === 'vote_average') exportShow.vote_average = show.vote_average;
+          }
+          
+          exportData[title] = exportShow;
+        }
+        
+        elements.exportJson.textContent = JSON.stringify(exportData, null, 2);
+      } else {
+        // CSV export
+        let csvContent = '';
+        
+        // Header row
+        const headers = [];
+        for (const field of state.settings.outputFields) {
+          if (field === 'title') headers.push('Original Title');
+          else if (field === 'tmdb_id') headers.push('TMDB ID');
+          else if (field === 'tmdb_name') headers.push('TMDB Name');
+          else if (field === 'year') headers.push('Year');
+          else if (field === 'overview') headers.push('Overview');
+          else if (field === 'poster_path') headers.push('Poster Path');
+          else if (field === 'vote_average') headers.push('Rating');
+        }
+        csvContent += headers.join(',') + '\n';
+        
+        // Data rows
+        for (const title of titles) {
+          const show = state.selectedShows[title];
+          const row = [];
+          
+          for (const field of state.settings.outputFields) {
+            if (field === 'title') row.push(`"${escapeCsv(title)}"`);
+            else if (field === 'tmdb_id') row.push(show.id);
+            else if (field === 'tmdb_name') row.push(`"${escapeCsv(show.name)}"`);
+            else if (field === 'year') row.push(show.year || '');
+            else if (field === 'overview') row.push(`"${escapeCsv(show.overview || '')}"`);
+            else if (field === 'poster_path') row.push(show.poster_path || '');
+            else if (field === 'vote_average') row.push(show.vote_average || '');
+          }
+          
+          csvContent += row.join(',') + '\n';
+        }
+        
+        elements.exportJson.textContent = csvContent;
+      }
+    }
+    
+    // Helper function to escape CSV values
+    function escapeCsv(text) {
+      if (!text) return '';
+      return text.replace(/"/g, '""');
+    }
+    
+    // Download data
+    function downloadData() {
+      const titles = Object.keys(state.selectedShows);
+      if (titles.length === 0) {
+        alert('No shows selected to download');
+        return;
+      }
+      
+      let content, filename, type;
+      
+      if (state.settings.exportFormat === 'json') {
+        content = elements.exportJson.textContent;
+        filename = 'tmdb_shows.json';
+        type = 'application/json';
+      } else {
+        content = elements.exportJson.textContent;
+        filename = 'tmdb_shows.csv';
+        type = 'text/csv';
+      }
+      
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    }
+    
+    // Reset app to initial state
+    function resetApp() {
+      elements.inputSection.style.display = 'block';
+      elements.processingSection.style.display = 'none';
+      elements.completeSection.style.display = 'none';
+      
+      // Clear results
+      elements.resultsContainer.innerHTML = '';
+      elements.selectedShowsList.innerHTML = '';
+      elements.exportJson.textContent = '';
+      
+      // Reset state
+      state.currentIndex = 0;
+      state.searchResults = [];
+      state.allSearchResults = [];
+      state.selectedShows = {};
+    }
+    
+    // Show transfer button function
+    function showTransferButton() {
+      // Get TMDB IDs from selected shows
+      const tmdbIds = [];
+      const titles = Object.keys(state.selectedShows);
+      
+      for (const title of titles) {
+        tmdbIds.push(state.selectedShows[title].id);
+      }
+      
+      // Store the IDs in localStorage for transfer
+      localStorage.setItem('tmdbIdsToTransfer', JSON.stringify(tmdbIds));
+      
+      // Show the transfer button
+      const transferButton = document.getElementById('transferToWatchedButton');
+      transferButton.style.display = 'block';
+      
+      transferButton.addEventListener('click', function() {
+        // Add a flag to indicate a transfer is in progress
+        localStorage.setItem('transferInProgress', 'true');
+        window.location.href = 'watched_dramas.html';
+      });
+    }
+    
+    // Initialize the app when the page loads
+    document.addEventListener('DOMContentLoaded', initializeApp);
+    
+    // Make functions available globally for onclick handlers
+    window.selectShow = selectShow;
+  </script>
+</body>
+</html>

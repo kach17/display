@@ -422,11 +422,6 @@ function showQuickAddForm() {
   const quickAddModal = document.getElementById('quickAddModal');
   quickAddModal.classList.add('active');
   document.body.style.overflow = 'hidden';
-  
-  // Add event listener to close modal when clicking outside
-  setTimeout(() => {
-    document.addEventListener('click', closeModalOnClickOutside);
-  }, 10);
 }
 
 // Function to close quick add form
@@ -436,22 +431,6 @@ function closeQuickAddForm() {
   document.body.style.overflow = '';
   document.getElementById('quickAddForm').reset();
   document.getElementById('quickAddResults').innerHTML = '';
-  
-  // Remove the click outside event listener
-  document.removeEventListener('click', closeModalOnClickOutside);
-}
-
-// Function to handle clicks outside the modal
-function closeModalOnClickOutside(event) {
-  const quickAddModal = document.getElementById('quickAddModal');
-  const quickAddContainer = document.querySelector('.quick-add-container');
-  
-  // Check if the modal is active and the click is outside the modal content
-  if (quickAddModal.classList.contains('active') && 
-      !quickAddContainer.contains(event.target) && 
-      !event.target.closest('.quick-add-container')) {
-    closeQuickAddForm();
-  }
 }
 
 // Function to search for a drama by title

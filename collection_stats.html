@@ -197,7 +197,15 @@
           console.log('Cast members:', drama.cast.length);
           drama.cast.forEach(actor => {
             if (actor.name) {
-              castCounts[actor.name] = (castCounts[actor.name] || 0) + 1;
+              // Store both name and gender if available
+              if (!castCounts[actor.name]) {
+                castCounts[actor.name] = {
+                  count: 1,
+                  gender: actor.gender || 'unknown'
+                };
+              } else {
+                castCounts[actor.name].count += 1;
+              }
             }
           });
         } else {
@@ -206,7 +214,11 @@
       });
       
       const result = Object.entries(castCounts)
-        .map(([name, count]) => ({name, count}))
+        .map(([name, data]) => ({
+          name, 
+          count: data.count,
+          gender: data.gender
+        }))
         .sort((a, b) => b.count - a.count);
         
       console.log('Final cast counts:', result);
@@ -216,16 +228,55 @@
     // Add new function to populate top actors list
     function populateTopActors(dramas = watchedDramas) {
       const topActors = getCastData(dramas);
-      const topActorsList = document.getElementById('topActorsList');
-      topActorsList.innerHTML = '';
+      const actorsList = document.getElementById('topActorsList');
+      
+      // Clear previous content
+      actorsList.innerHTML = '';
+      
       if (topActors.length === 0) {
-        topActorsList.innerHTML = '<div class="no-results">No actor data available</div>';
+        actorsList.innerHTML = '<div class="no-results">No actor data available</div>';
         return;
       }
+      
+      // Add filter buttons
+      const filterContainer = document.createElement('div');
+      filterContainer.className = 'actor-filter-container';
+      filterContainer.innerHTML = `
+        <button class="actor-filter-btn ${activeFilters.actorGender === null ? 'active' : ''}" data-gender="all">All</button>
+        <button class="actor-filter-btn ${activeFilters.actorGender === 'male' ? 'active' : ''}" data-gender="male">Male</button>
+        <button class="actor-filter-btn ${activeFilters.actorGender === 'female' ? 'active' : ''}" data-gender="female">Female</button>
+      `;
+      actorsList.appendChild(filterContainer);
+      
+      // Add event listeners to filter buttons
+      filterContainer.querySelectorAll('.actor-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const gender = this.getAttribute('data-gender');
+          if (gender === 'all') {
+            activeFilters.actorGender = null;
+          } else {
+            activeFilters.actorGender = gender;
+          }
+          // Only refresh the actor list without filtering the dramas
+          populateTopActors(dramas);
+        });
+      });
+      
+      // Create actor grid
       const actorGrid = document.createElement('div');
       actorGrid.className = 'actor-grid';
-      topActorsList.appendChild(actorGrid);
-      topActors.slice(0, 8).forEach((actor, index) => {
+      actorsList.appendChild(actorGrid);
+      
+      // Filter actors by gender if needed
+      let filteredActors = topActors;
+      if (activeFilters.actorGender === 'male') {
+        filteredActors = topActors.filter(actor => actor.gender === 2 || actor.gender === 'male');
+      } else if (activeFilters.actorGender === 'female') {
+        filteredActors = topActors.filter(actor => actor.gender === 1 || actor.gender === 'female');
+      }
+      
+      // Take top 8 actors after filtering
+      filteredActors.slice(0, 8).forEach((actor, index) => {
         let profilePath = null;
         for (const drama of dramas) {
           if (drama.cast && Array.isArray(drama.cast)) {
@@ -236,6 +287,15 @@
             }
           }
         }
+        
+        // Get gender-specific icon
+        let genderIcon = 'fa-user'; // default
+        if (actor.gender === 2 || actor.gender === 'male') {
+          genderIcon = 'fa-male';
+        } else if (actor.gender === 1 || actor.gender === 'female') {
+          genderIcon = 'fa-female';
+        }
+        
         const actorCard = document.createElement('div');
         actorCard.className = 'netflix-actor-card';
         actorCard.innerHTML = `
@@ -243,7 +303,7 @@
           <div class="netflix-actor-image">
             ${profilePath 
               ? `<img src="https://image.tmdb.org/t/p/w185${profilePath}" alt="${actor.name}" onerror="this.src='placeholder.jpg'">`
-              : `<div class="actor-placeholder"><i class="fas fa-user"></i></div>`
+              : `<div class="actor-placeholder"><i class="fas ${genderIcon}"></i></div>`
             }
             <div class="actor-hover-overlay">
               <div class="actor-hover-name">${actor.name}</div>
@@ -277,7 +337,8 @@
       country: null,
       rating: null,
       year: null,
-      cast: null
+      cast: null,
+      actorGender: null
     };
     
     // Function to filter dramas based on active filters
@@ -851,30 +912,56 @@
       });
     }
     
-    // Add filter indicators to show active filters
+    // Add filter indicators to show active filters as removable pills
     function updateFilterIndicators() {
-      const indicators = [];
-      if (activeFilters.genre) {
-        indicators.push(`<span class="filter-indicator"><i class="fas fa-tag"></i> Genre: ${activeFilters.genre}</span>`);
+      const filterIndicators = document.getElementById('filterIndicators');
+      filterIndicators.innerHTML = '';
+
+      const filters = [
+        { key: 'genre', label: activeFilters.genre },
+        { key: 'country', label: activeFilters.country },
+        { key: 'rating', label: activeFilters.rating },
+        { key: 'year', label: activeFilters.year },
+        { key: 'cast', label: activeFilters.cast }
+      ].filter(f => f.label);
+
+      if (filters.length === 0) {
+        filterIndicators.innerHTML = '<div class="no-filters">No active filters. Click on charts to filter data.</div>';
+        return;
       }
-      if (activeFilters.country) {
-        indicators.push(`<span class="filter-indicator"><i class="fas fa-globe"></i> Country: ${activeFilters.country}</span>`);
+
+      filters.forEach(f => {
+        const pill = document.createElement('span');
+        pill.className = 'filter-indicator-pill';
+        pill.innerHTML = `
+          <span class="filter-label">${f.key.charAt(0).toUpperCase() + f.key.slice(1)}: ${f.label}</span>
+          <button class="filter-cancel-btn" title="Remove filter" data-filter="${f.key}">&times;</button>
+        `;
+        filterIndicators.appendChild(pill);
+      });
+
+      // Add clear all button if more than one filter
+      if (filters.length > 1) {
+        const clearAll = document.createElement('button');
+        clearAll.className = 'filter-indicator clear-all';
+        clearAll.textContent = 'Clear All';
+        clearAll.onclick = function() {
+          Object.keys(activeFilters).forEach(k => activeFilters[k] = null);
+          updateDashboard();
+          updateFilterIndicators();
+        };
+        filterIndicators.appendChild(clearAll);
       }
-      if (activeFilters.rating) {
-        indicators.push(`<span class="filter-indicator"><i class="fas fa-star"></i> Rating: ${activeFilters.rating}</span>`);
-      }
-      if (activeFilters.year) {
-        indicators.push(`<span class="filter-indicator"><i class="fas fa-calendar"></i> Year: ${activeFilters.year}</span>`);
-      }
-      if (activeFilters.cast) {
-        indicators.push(`<span class="filter-indicator"><i class="fas fa-user"></i> Actor: ${activeFilters.cast}</span>`);
-      }
-      const filterIndicatorsDiv = document.getElementById('filterIndicators');
-      if (indicators.length === 0) {
-        filterIndicatorsDiv.innerHTML = '<div class="no-filters">No active filters. Click on charts to filter data.</div>';
-      } else {
-        filterIndicatorsDiv.innerHTML = indicators.join('');
-      }
+
+      // Add event listeners for cancel buttons
+      filterIndicators.querySelectorAll('.filter-cancel-btn').forEach(btn => {
+        btn.onclick = function() {
+          const filterKey = btn.getAttribute('data-filter');
+          activeFilters[filterKey] = null;
+          updateDashboard();
+          updateFilterIndicators();
+        };
+      });
     }
     
     // Function to update the filtered series list
@@ -954,6 +1041,31 @@
           box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
         }
         
+        /* Actor filter buttons */
+        .actor-filter-container {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 12px;
+        }
+        .actor-filter-btn {
+          background: #333;
+          color: #ccc;
+          border: none;
+          padding: 6px 12px;
+          margin: 0 4px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+          transition: all 0.2s;
+        }
+        .actor-filter-btn:hover {
+          background: #444;
+        }
+        .actor-filter-btn.active {
+          background: #e50914;
+          color: white;
+        }
+        
         /* Netflix-inspired Actor Grid Styles */
         .actor-grid {
           display: grid;
@@ -975,6 +1087,9 @@
         .netflix-actor-card:hover {
           transform: scale(1.04);
           z-index: 2;
+        }
+        .active-actor-filter {
+          box-shadow: 0 0 0 2px #e50914, 0 4px 8px rgba(229, 9, 20, 0.5);
         }
         .actor-rank-badge {
           position: absolute;

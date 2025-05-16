@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <i class="fas fa-cog"></i>
         </button>
         <div id="settingsDropdown" class="settings-dropdown">
+          <a href="#" id="exportDataBtn"><i class="fas fa-file-export"></i> Export Data</a>
+          <a href="#" id="importDataBtn"><i class="fas fa-file-import"></i> Import Data</a>
           <a href="#" id="clearBtn"><i class="fas fa-trash"></i> Clear Data</a>
           <!-- Add more settings options here as needed -->
         </div>
@@ -51,6 +53,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
       
+      // Add event listener for export button
+      const exportDataBtn = document.getElementById('exportDataBtn');
+      if (exportDataBtn) {
+        exportDataBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          exportData();
+        });
+      }
+      
+      // Add event listener for import button
+      const importDataBtn = document.getElementById('importDataBtn');
+      if (importDataBtn) {
+        importDataBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          importData();
+        });
+      }
+      
       // Add event listener for clear button if needed
       const clearBtn = document.getElementById('clearBtn');
       if (clearBtn) {
@@ -65,5 +85,85 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       }
     }
+  }
+  
+  // Function to export data
+  function exportData() {
+    try {
+      // Get data from localStorage
+      const watchedDramas = JSON.parse(localStorage.getItem('watchedDramasData')) || [];
+      const tmdbMatcherSettings = JSON.parse(localStorage.getItem('tmdbMatcherSettings')) || {};
+      
+      // Create export object with all relevant data
+      const exportData = {
+        watchedDramas: watchedDramas,
+        settings: tmdbMatcherSettings,
+        exportDate: new Date().toISOString()
+      };
+      
+      // Convert to JSON string
+      const dataStr = JSON.stringify(exportData, null, 2);
+      
+      // Create download link
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      const exportFileDefaultName = 'drama_collection_backup_' + new Date().toISOString().split('T')[0] + '.json';
+      
+      // Create temporary link element and trigger download
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      alert('Data exported successfully!');
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Export failed: ' + error.message);
+    }
+  }
+  
+  // Function to import data
+  function importData() {
+    // Create file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json';
+    
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          
+          // Validate imported data structure
+          if (!importedData.watchedDramas || !Array.isArray(importedData.watchedDramas)) {
+            throw new Error('Invalid data format: watchedDramas array missing');
+          }
+          
+          // Confirm before overwriting
+          if (confirm(`Import ${importedData.watchedDramas.length} dramas? This will overwrite your current collection.`)) {
+            // Store data in localStorage
+            localStorage.setItem('watchedDramasData', JSON.stringify(importedData.watchedDramas));
+            
+            // Import settings if available
+            if (importedData.settings) {
+              localStorage.setItem('tmdbMatcherSettings', JSON.stringify(importedData.settings));
+            }
+            
+            alert('Data imported successfully! Reloading page...');
+            window.location.reload();
+          }
+        } catch (error) {
+          console.error('Import failed:', error);
+          alert('Import failed: ' + error.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+    
+    // Trigger file selection
+    fileInput.click();
   }
 });

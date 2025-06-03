@@ -39,8 +39,31 @@ function init() {
 function loadSavedDramas() {
   const savedData = localStorage.getItem('watchedDramasData');
   if (savedData) {
-    watchedDramas = JSON.parse(savedData);
+    try {
+      const parsedData = JSON.parse(savedData);
+      if (Array.isArray(parsedData)) {
+        watchedDramas = parsedData;
+      } else {
+        console.error('Saved data is not an array:', parsedData);
+        watchedDramas = [];
+        // Reset corrupted data
+        localStorage.removeItem('watchedDramasData');
+      }
+    } catch (error) {
+      console.error('Error parsing saved dramas:', error);
+      watchedDramas = [];
+      // Reset corrupted data
+      localStorage.removeItem('watchedDramasData');
+    }
   }
+  
+  // Ensure watchedDramas is always an array
+  if (!Array.isArray(watchedDramas)) {
+    watchedDramas = [];
+  }
+  
+  // Make watchedDramas available globally
+  window.watchedDramas = watchedDramas;
 }
 
 function setupEventListeners() {
@@ -51,18 +74,18 @@ function setupEventListeners() {
 
   // Fetch button
   fetchButton.addEventListener('click', fetchDramas);
-  
+
   // Clear button
   clearButton.addEventListener('click', clearCollection);
-  
+
   // Modal close
   modalClose.addEventListener('click', closeModal);
-  
+
   // Close modal on overlay click
   modal.addEventListener('click', function(e) {
     if (e.target === modal) closeModal();
   });
-  
+
   // Close modal on Escape key
   document.addEventListener('keydown', function(e) {
     if (modal.classList.contains('active') && (e.key === 'Escape' || e.key === 'Esc')) {
@@ -118,7 +141,7 @@ async function fetchDramas() {
     renderCards();
     updateDramaCount();
     setStatusMessage(`Successfully added ${newDramas.length} new items.`, 3000);
-    localStorage.setItem('watchedDramasData', JSON.stringify(watchedDramas));
+    saveWatchedDramas(); // Use the new function instead of direct localStorage call
   } catch (error) {
     setStatusMessage(`Error: ${error.message}`, 4000);
     console.error('Error fetching data:', error);
@@ -508,7 +531,7 @@ async function quickAddDrama(id) {
     
     // Add to collection
     watchedDramas.push(data);
-    localStorage.setItem('watchedDramasData', JSON.stringify(watchedDramas));
+    saveWatchedDramas(); // Use the new function instead of direct localStorage call
     
     // Update UI
     renderCards();
@@ -518,5 +541,15 @@ async function quickAddDrama(id) {
     
   } catch (error) {
     alert(`Error adding drama: ${error.message}`);
+  }
+}
+
+function saveWatchedDramas() {
+  try {
+    localStorage.setItem('watchedDramasData', JSON.stringify(watchedDramas));
+    console.log('Saved watchedDramas to localStorage:', watchedDramas.length, 'items');
+  } catch (error) {
+    console.error('Error saving watchedDramas to localStorage:', error);
+    setStatusMessage('Error saving data. Try clearing some items.', 5000);
   }
 }
